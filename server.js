@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3000;
 // Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
 if (!supabaseUrl || !supabaseKey) {
@@ -22,12 +23,23 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 let supabase;
+let supabaseAdmin;
 try {
   if (supabaseUrl && supabaseKey) {
     supabase = createClient(supabaseUrl, supabaseKey);
     console.log('✓ Supabase client initialized');
   } else {
     supabase = null;
+  }
+  
+  if (supabaseUrl && supabaseServiceKey) {
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('✓ Supabase admin client initialized (for bypassing RLS)');
+  } else {
+    supabaseAdmin = null;
+    if (supabaseUrl && supabaseKey) {
+      console.warn('WARN: SUPABASE_SERVICE_ROLE_KEY not set — admin operations will use anon key (may fail due to RLS)');
+    }
   }
 } catch (err) {
   console.error('✗ Error initializing Supabase:', err.message);
@@ -149,7 +161,9 @@ app.post('/api/admin/products', authMiddleware, async (req, res) => {
       return res.json({ data: newProduct });
     }
 
-    const { data, error } = await supabase
+    // Use admin client to bypass RLS if available
+    const client = supabaseAdmin || supabase;
+    const { data, error } = await client
       .from('products')
       .insert([{ name, price: parseFloat(price), image: image || '' }])
       .select();
@@ -185,7 +199,7 @@ app.patch('/api/admin/products/:id', authMiddleware, async (req, res) => {
       return res.json({ data: product });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabaseAdmin || supabase)
       .from('products')
       .update({ name, price: parseFloat(price), image: image || '' })
       .eq('id', parseInt(id))

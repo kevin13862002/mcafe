@@ -31,6 +31,9 @@
     <script src="./supabase-init.js"></script>
   </head>
   <body class="bg-white text-gray-800 font-sans">
+    <script>
+      window.API_URL = window.API_URL || 'http://localhost:8000';
+    </script>
     <div id="root" class="min-h-screen max-w-5xl mx-auto p-4 sm:p-6"></div>
 
     <script type="text/babel">
@@ -74,14 +77,14 @@
         );
       }
 
-      // Mock data
-      const CAKES = [
-        { id:1, name: 'Classic Chocolate Cake', price:12.00, description: 'Rich chocolate sponge layered with creamy ganache.', image: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:2, name: 'Vanilla Berry Delight', price:14.50, description: 'Light vanilla cake topped with seasonal berries.', image: 'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:3, name: 'Matcha Cream Cake', price:15.00, description: 'Delicate matcha layers with whipped cream frosting.', image: 'https://images.pexels.com/photos/315755/pexels-photo-315755.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:4, name: 'Red Velvet', price:13.75, description: 'Classic red velvet with smooth cream cheese icing.', image: 'https://images.pexels.com/photos/205961/pexels-photo-205961.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:5, name: 'Lemon Drizzle', price:11.50, description: 'Zesty lemon cake with tangy glaze.', image: 'https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:6, name: 'Salted Caramel', price:16.00, description: 'Decadent caramel layers with a hint of sea salt.', image: 'https://images.pexels.com/photos/1624487/pexels-photo-1624487.jpeg?auto=compress&cs=tinysrgb&w=400' }
+      // Default data (will be replaced by API data)
+      const DEFAULT_CAKES = [
+        { id:1, name: 'Classic Chocolate Cake', price:12.00, image: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:2, name: 'Vanilla Berry Delight', price:14.50, image: 'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:3, name: 'Matcha Cream Cake', price:15.00, image: 'https://images.pexels.com/photos/315755/pexels-photo-315755.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:4, name: 'Red Velvet', price:13.75, image: 'https://images.pexels.com/photos/205961/pexels-photo-205961.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:5, name: 'Lemon Drizzle', price:11.50, image: 'https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:6, name: 'Salted Caramel', price:16.00, image: 'https://images.pexels.com/photos/1624487/pexels-photo-1624487.jpeg?auto=compress&cs=tinysrgb&w=400' }
       ];
 
       function Header(){
@@ -295,12 +298,30 @@
       function App(){
         const [query, setQuery] = useState('');
         const [open, setOpen] = useState(false);
+        const [cakes, setCakes] = useState(DEFAULT_CAKES);
+
+        useEffect(() => {
+          async function loadProducts(){
+            try {
+              const apiUrl = window.API_URL || 'http://localhost:8000';
+              const res = await fetch(`${apiUrl}/api/products`);
+              if(!res.ok) throw new Error('Failed to load products');
+              const json = await res.json();
+              if(json.data && json.data.length > 0){
+                setCakes(json.data);
+              }
+            } catch(err) {
+              console.error('Failed to load products from API, using defaults:', err);
+            }
+          }
+          loadProducts();
+        }, []);
 
         const filtered = useMemo(() => {
           const q = query.trim().toLowerCase();
-          if(!q) return CAKES;
-          return CAKES.filter(c => c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
-        }, [query]);
+          if(!q) return cakes;
+          return cakes.filter(c => c.name.toLowerCase().includes(q));
+        }, [query, cakes]);
 
         return (
           <CartProvider>
