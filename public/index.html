@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>M Cafe - Cake Sale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { scgreen: '#00704A' },
+            fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] }
+          }
+        }
+      };
+    </script>
+    <style>
+      .bg-scgreen { background-color: #00704A !important; }
+      .text-scgreen { color: #00704A !important; }
+      .border-scgreen { border-color: #00704A !important; }
+      .hover\:bg-scgreen:hover { background-color: #00704A !important; }
+    </style>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./supabase-init.js"></script>
+  </head>
+  <body class="bg-white text-gray-800 font-sans">
+    <div id="root" class="min-h-screen max-w-5xl mx-auto p-4 sm:p-6"></div>
+
+    <script type="text/babel">
+      const { useState, useMemo, useContext, useEffect } = React;
+
+      const CartContext = React.createContext(null);
+
+      function CartProvider({children}){
+        const [items, setItems] = useState(() => {
+          try{
+            const raw = localStorage.getItem('m-cafe-cart');
+            return raw ? JSON.parse(raw) : [];
+          }catch(e){
+            return [];
+          }
+        });
+
+        function addToCart(product){
+          setItems(prev => {
+            const found = prev.find(i => i.id === product.id);
+            if(found) return prev.map(i => i.id === product.id ? {...i, qty: i.qty + 1} : i);
+            return [...prev, {...product, qty: 1}];
+          });
+        }
+
+        const total = useMemo(() => items.reduce((s,i) => s + i.price * i.qty, 0), [items]);
+        const count = useMemo(() => items.reduce((s,i) => s + i.qty, 0), [items]);
+
+        useEffect(() => {
+          try{
+            localStorage.setItem('m-cafe-cart', JSON.stringify(items));
+          }catch(e){
+            // ignore
+          }
+        }, [items]);
+
+        return (
+          <CartContext.Provider value={{items, addToCart, total, count}}>
+            {children}
+          </CartContext.Provider>
+        );
+      }
+
+      // Mock data
+      const CAKES = [
+        { id:1, name: 'Classic Chocolate Cake', price:12.00, description: 'Rich chocolate sponge layered with creamy ganache.', image: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:2, name: 'Vanilla Berry Delight', price:14.50, description: 'Light vanilla cake topped with seasonal berries.', image: 'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:3, name: 'Matcha Cream Cake', price:15.00, description: 'Delicate matcha layers with whipped cream frosting.', image: 'https://images.pexels.com/photos/315755/pexels-photo-315755.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:4, name: 'Red Velvet', price:13.75, description: 'Classic red velvet with smooth cream cheese icing.', image: 'https://images.pexels.com/photos/205961/pexels-photo-205961.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:5, name: 'Lemon Drizzle', price:11.50, description: 'Zesty lemon cake with tangy glaze.', image: 'https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=400' },
+        { id:6, name: 'Salted Caramel', price:16.00, description: 'Decadent caramel layers with a hint of sea salt.', image: 'https://images.pexels.com/photos/1624487/pexels-photo-1624487.jpeg?auto=compress&cs=tinysrgb&w=400' }
+      ];
+
+      function Header(){
+        return (
+          <header className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-scgreen flex items-center justify-center shadow">
+                <span className="text-white font-bold text-lg">M</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold">M Cafe</h1>
+                <p className="text-sm text-gray-500">Cake Sale</p>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <button style={{backgroundColor: '#00704A'}} className="px-4 py-2 text-white rounded-lg text-sm shadow hover:opacity-90">Cart</button>
+            </div>
+          </header>
+        );
+      }
+
+      function ProductCard({cake}){
+        const { addToCart } = useContext(CartContext);
+        return (
+          <article className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div className="h-44 w-full overflow-hidden">
+              <img src={cake.image} alt={cake.name} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <div className="flex items-start justify-between">
+                  <h3 className="text-lg font-semibold">{cake.name}</h3>
+                  <span className="ml-2 text-sm font-medium text-scgreen">${cake.price.toFixed(2)}</span>
+                </div>
+                <p className="mt-2 text-sm text-gray-600">{cake.description}</p>
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <button onClick={() => addToCart(cake)} style={{backgroundColor: '#00704A'}} className="px-3 py-2 text-white rounded-lg text-sm shadow hover:opacity-90">Add to Order</button>
+                <button className="text-sm text-gray-500">Details</button>
+              </div>
+            </div>
+          </article>
+        );
+      }
+
+      function FloatingOrder({onOpen}){
+        const { total, count } = useContext(CartContext);
+        return (
+          <div className="fixed inset-x-4 bottom-6 sm:bottom-8 sm:right-6 sm:inset-x-auto z-40">
+            <button onClick={onOpen} style={{backgroundColor: '#00704A'}} className="w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-3 text-white rounded-full shadow-lg">
+              <span className="font-semibold">View Order</span>
+              <span className="text-sm opacity-90">{count} • ${total.toFixed(2)}</span>
+            </button>
+          </div>
+        );
+      }
+
+      function OrderPanel({open, onClose}){
+        const { items, total } = useContext(CartContext);
+        return (
+          <div className={`fixed inset-0 z-50 transition-opacity ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            <div className={`absolute inset-0 bg-black bg-opacity-40 ${open ? 'opacity-100' : 'opacity-0'} transition-opacity`} onClick={onClose}></div>
+                  <div className={`absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl p-4 shadow-xl transform transition-transform ${open ? 'translate-y-0' : 'translate-y-full'}`}>
+                    <OrderPanelContent items={items} total={total} onClose={onClose} />
+                  </div>
+          </div>
+        );
+      }
+
+            function OrderPanelContent({items, total, onClose}){
+              const [checkout, setCheckout] = useState(false);
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold">Your Order</h3>
+                    <button onClick={onClose} className="text-gray-500">Close</button>
+                  </div>
+
+                  {!checkout ? (
+                    <>
+                      <div className="space-y-3 max-h-72 overflow-y-auto">
+                        {items.length === 0 ? (
+                          <p className="text-gray-500">No items yet.</p>
+                        ) : (
+                          items.map(it => (
+                            <div key={it.id} className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{it.name}</div>
+                                <div className="text-sm text-gray-500">Qty: {it.qty}</div>
+                              </div>
+                              <div className="text-sm font-medium">${(it.price * it.qty).toFixed(2)}</div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="text-gray-600">Total</div>
+                        <div className="text-lg font-semibold">${total.toFixed(2)}</div>
+                      </div>
+                      <div className="mt-4 flex gap-3">
+                        <button onClick={() => setCheckout(true)} style={{backgroundColor: '#00704A'}} className="flex-1 px-4 py-2 text-white rounded-lg">Checkout</button>
+                        <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-200 rounded-lg">Close</button>
+                      </div>
+                    </>
+                  ) : (
+                    <Checkout onBack={() => setCheckout(false)} />
+                  )}
+                </div>
+              );
+            }
+
+            function Checkout({onBack}){
+              const { items, total } = useContext(CartContext);
+              const [name, setName] = useState('');
+              const [address, setAddress] = useState('');
+              const [requests, setRequests] = useState('');
+              const [location, setLocation] = useState(null);
+              const [locError, setLocError] = useState(null);
+              const [locLoading, setLocLoading] = useState(false);
+
+              function shareLocation(){
+                if(!navigator.geolocation){
+                  setLocError('Geolocation not supported');
+                  return;
+                }
+                setLocLoading(true);
+                navigator.geolocation.getCurrentPosition((pos) => {
+                  const lat = pos.coords.latitude;
+                  const lng = pos.coords.longitude;
+                  const maps = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                  setLocation({lat, lng, maps});
+                  setLocError(null);
+                  setLocLoading(false);
+                }, (err) => {
+                  setLocError(err.message || 'Unable to get location');
+                  setLocLoading(false);
+                });
+              }
+
+              async function placeViaWhatsApp(){
+                if(items.length === 0) return alert('Cart is empty');
+                if(!name || name.trim().length === 0) return alert('Please enter your name before placing the order');
+                const lines = [];
+                lines.push('M Cafe - Cake Sale Order');
+                lines.push('');
+                lines.push('Items:');
+                items.forEach(it => {
+                  lines.push(`- ${it.name} x${it.qty} = $${(it.price * it.qty).toFixed(2)}`);
+                });
+                lines.push('');
+                lines.push(`Total: $${total.toFixed(2)}`);
+                lines.push('');
+                lines.push(`Customer: ${name || 'N/A'}`);
+          lines.push(`Delivery Address: ${address || 'Not provided'}`);
+                lines.push('');
+                lines.push(`Location: ${location ? location.maps : 'Not provided'}`);
+
+                const msg = lines.join('\n');
+
+                // Attempt to save to Supabase before redirecting to WhatsApp
+                try{
+                  if(window.saveOrderToDatabase){
+                    const dbOrder = {
+                      items: JSON.stringify(items.map(it => ({ id: it.id, name: it.name, price: it.price, qty: it.qty }))),
+                      total: total,
+                      customer_name: name || null,
+                      requests: requests || null,
+                      location: location ? location.maps : null
+                    };
+                    await window.saveOrderToDatabase(dbOrder);
+                  }
+                }catch(err){
+                  console.warn('Could not save order to DB:', err);
+                }
+
+                const encoded = encodeURIComponent(msg);
+                const url = `https://wa.me/18769060203?text=${encoded}`;
+                window.location.href = url;
+              }
+
+              return (
+                <div>
+                  <div className="space-y-3 max-h-60 overflow-y-auto mb-3">
+                    <div>
+                      <label className="block text-sm font-medium">Name</label>
+                      <input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Delivery Address</label>
+                      <input value={address} onChange={e => setAddress(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Special Requests / Allergies</label>
+                      <textarea value={requests} onChange={e => setRequests(e.target.value)} rows={3} style={{backgroundColor: '#fffacd'}} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
+                    </div>
+                    <div>
+                      <button onClick={shareLocation} className="px-3 py-2 bg-white border border-gray-200 rounded-lg">{locLoading ? 'Locating…' : 'Share My Location'}</button>
+                      {location && <a href={location.maps} target="_blank" rel="noreferrer" style={{color: '#00704A'}} className="ml-3 text-sm font-medium">View on map</a>}
+                      {locError && <div className="text-sm text-red-500 mt-1">{locError}</div>}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button onClick={placeViaWhatsApp} style={{backgroundColor: '#00704A'}} className="flex-1 px-4 py-2 text-white rounded-lg">Place Order via WhatsApp</button>
+                    <button onClick={onBack} className="px-4 py-2 bg-white border border-gray-200 rounded-lg">Back</button>
+                  </div>
+                </div>
+              );
+            }
+
+      function App(){
+        const [query, setQuery] = useState('');
+        const [open, setOpen] = useState(false);
+
+        const filtered = useMemo(() => {
+          const q = query.trim().toLowerCase();
+          if(!q) return CAKES;
+          return CAKES.filter(c => c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
+        }, [query]);
+
+        return (
+          <CartProvider>
+            <div className="min-h-screen max-w-5xl mx-auto">
+              <div className="p-4 sm:p-6">
+                <Header />
+
+                <section className="mt-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-semibold">Fresh cakes, made daily</h2>
+                      <p className="mt-2 text-gray-600">Choose from our selection of freshly baked cakes — perfect for any celebration.</p>
+                    </div>
+                    <div>
+                      <img src="https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=200" alt="cake" className="w-24 h-24 rounded-lg object-cover shadow-md" />
+                    </div>
+                  </div>
+                </section>
+
+                <div className="mt-4 flex items-center gap-3">
+                  <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search cakes" className="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-scgreen" />
+                  <button className="px-3 py-3 bg-white border border-gray-200 rounded-lg text-scgreen">Filter</button>
+                </div>
+
+                <main className="mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filtered.map(c => <ProductCard key={c.id} cake={c} />)}
+                  </div>
+                </main>
+
+                <footer className="mt-8 text-center text-sm text-gray-500">© M Cafe - Cake Sale</footer>
+              </div>
+
+              <FloatingOrder onOpen={() => setOpen(true)} />
+              <OrderPanel open={open} onClose={() => setOpen(false)} />
+            </div>
+          </CartProvider>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
