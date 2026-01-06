@@ -144,7 +144,7 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/admin/products', authMiddleware, async (req, res) => {
   try {
-    const { name, price, image } = req.body;
+    const { name, price, image, description } = req.body;
 
     if (!name || !price || isNaN(parseFloat(price))) {
       return res.status(400).json({ error: 'Invalid product data' });
@@ -156,6 +156,7 @@ app.post('/api/admin/products', authMiddleware, async (req, res) => {
         name,
         price: parseFloat(price),
         image: image || '',
+        description: description || '',
       };
       localStore.products.push(newProduct);
       return res.json({ data: newProduct });
@@ -165,7 +166,7 @@ app.post('/api/admin/products', authMiddleware, async (req, res) => {
     const client = supabaseAdmin || supabase;
     const { data, error } = await client
       .from('products')
-      .insert([{ name, price: parseFloat(price), image: image || '' }])
+      .insert([{ name, price: parseFloat(price), image: image || '', description: description || '' }])
       .select();
 
     if (error) {
@@ -183,7 +184,7 @@ app.post('/api/admin/products', authMiddleware, async (req, res) => {
 app.patch('/api/admin/products/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, image } = req.body;
+    const { name, price, image, description } = req.body;
 
     if (!name || !price || isNaN(parseFloat(price))) {
       return res.status(400).json({ error: 'Invalid product data' });
@@ -196,12 +197,13 @@ app.patch('/api/admin/products/:id', authMiddleware, async (req, res) => {
       product.name = name;
       product.price = parseFloat(price);
       product.image = image || '';
+      product.description = description || '';
       return res.json({ data: product });
     }
 
     const { data, error } = await (supabaseAdmin || supabase)
       .from('products')
-      .update({ name, price: parseFloat(price), image: image || '' })
+      .update({ name, price: parseFloat(price), image: image || '', description: description || '' })
       .eq('id', parseInt(id))
       .select();
 
