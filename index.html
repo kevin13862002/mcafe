@@ -318,19 +318,28 @@
         const [query, setQuery] = useState('');
         const [open, setOpen] = useState(false);
         const [cakes, setCakes] = useState([]);
+        const [loading, setLoading] = useState(true);
 
         useEffect(() => {
           async function loadProducts(){
             try {
-              const apiUrl = window.API_URL || 'http://localhost:8000';
-              const res = await fetch(`${apiUrl}/api/products`);
-              if(!res.ok) throw new Error('Failed to load products');
-              const json = await res.json();
-              if(json.data && json.data.length > 0){
-                setCakes(json.data);
+              if (!window.supabase) {
+                console.error('Supabase not initialized');
+                setLoading(false);
+                return;
               }
+              
+              const { data, error } = await window.supabase
+                .from('products')
+                .select('*')
+                .order('id');
+              
+              if (error) throw error;
+              setCakes(data || []);
             } catch(err) {
-              console.error('Failed to load products from API:', err);
+              console.error('Failed to load products:', err);
+            } finally {
+              setLoading(false);
             }
           }
           loadProducts();
@@ -366,9 +375,15 @@
                 </div>
 
                 <main className="mt-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filtered.map(c => <ProductCard key={c.id} cake={c} />)}
-                  </div>
+                  {loading ? (
+                    <div className="text-center py-12 text-gray-500">Loading products...</div>
+                  ) : filtered.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">No cakes found</div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filtered.map(c => <ProductCard key={c.id} cake={c} />)}
+                    </div>
+                  )}
                 </main>
 
                 <footer className="mt-8 text-center text-sm text-gray-500">© M Cafe - Cake Sale</footer>

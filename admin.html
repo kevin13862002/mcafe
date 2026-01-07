@@ -65,66 +65,84 @@
 
         async function fetchProducts(){
           try{
-            const apiUrl = window.API_URL || 'http://localhost:3000';
-            console.log('Fetching products from:', `${apiUrl}/api/products`);
-            const res = await fetch(`${apiUrl}/api/products`);
-            if(!res.ok) throw new Error(`HTTP ${res.status}`);
-            const json = await res.json();
-            console.log('Products response:', json);
-            if(json.error) return console.error('API error:', json.error);
-            setProducts(json.data || []);
+            if (!window.supabase) {
+              console.error('Supabase not initialized');
+              return;
+            }
+            
+            const { data, error } = await window.supabase
+              .from('products')
+              .select('*')
+              .order('id');
+            
+            if (error) throw error;
+            setProducts(data || []);
           }catch(e){
             console.error('fetchProducts error:', e.message);
-            alert('Could not load products. Make sure the Node server is running on http://localhost:3000');
+            alert('Could not load products');
           }
         }
 
         async function fetchOrders(){
           try{
-            const apiUrl = window.API_URL || 'http://localhost:3000';
-            const res = await fetch(`${apiUrl}/api/admin/orders`, {
-              headers: { 'x-session-id': window.adminSessionId }
-            });
-            if(!res.ok) throw new Error(`HTTP ${res.status}`);
-            const json = await res.json();
-            if(json.error) return console.error('API error:', json.error);
-            setOrders(json.data || []);
+            if (!window.supabase) {
+              console.error('Supabase not initialized');
+              return;
+            }
+            
+            const { data, error } = await window.supabase
+              .from('orders')
+              .select('*')
+              .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            setOrders(data || []);
           }catch(e){
             console.error('fetchOrders error:', e.message);
+            alert('Could not load orders');
           }
         }
 
         async function addProduct(name, price, image){
           if(!name || !price) return alert('Name and price required');
           try{
-            const apiUrl = window.API_URL || 'http://localhost:3000';
-            const res = await fetch(`${apiUrl}/api/admin/products`, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json', 'x-session-id': window.adminSessionId },
-              body: JSON.stringify({ name, price, image })
-            });
-            const json = await res.json();
-            if(json.error) return alert('Error: '+json.error);
+            if (!window.supabase) {
+              console.error('Supabase not initialized');
+              return;
+            }
+            
+            const { data, error } = await window.supabase
+              .from('products')
+              .insert([{ name, price: parseFloat(price), image, description: '' }])
+              .select();
+            
+            if (error) throw error;
+            alert('Product added!');
             fetchProducts();
-            return true;
           }catch(e){
-            alert('Error: '+e.message);
+            console.error('addProduct error:', e.message);
+            alert('Failed to add product');
           }
         }
 
         async function updateProduct(id, updates){
           try{
-            const apiUrl = window.API_URL || 'http://localhost:3000';
-            const res = await fetch(`${apiUrl}/api/admin/products/${id}`, {
-              method: 'PATCH',
-              headers: { 'content-type': 'application/json', 'x-session-id': window.adminSessionId },
-              body: JSON.stringify(updates)
-            });
-            const json = await res.json();
-            if(json.error) return alert('Error: '+json.error);
+            if (!window.supabase) {
+              console.error('Supabase not initialized');
+              return;
+            }
+            
+            const { data, error } = await window.supabase
+              .from('products')
+              .update(updates)
+              .eq('id', id)
+              .select();
+            
+            if (error) throw error;
             fetchProducts();
           }catch(e){
-            alert('Error: '+e.message);
+            console.error('updateProduct error:', e.message);
+            alert('Failed to update product');
           }
         }
 
@@ -132,11 +150,9 @@
 
         async function signOut(){
           try{
-            const apiUrl = window.API_URL || 'http://localhost:3000';
-            await fetch(`${apiUrl}/api/admin/signout`, {
-              method: 'POST',
-              headers: { 'x-session-id': window.adminSessionId }
-            });
+            if (window.supabase) {
+              await window.supabase.auth.signOut();
+            }
           }catch(e){
             console.error('signout error:', e);
           }

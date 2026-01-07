@@ -78,16 +78,6 @@
         );
       }
 
-      // Mock data
-      const CAKES = [
-        { id:1, name: 'Classic Chocolate Cake', price:12.00, description: 'Rich chocolate sponge layered with creamy ganache.', image: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:2, name: 'Vanilla Berry Delight', price:14.50, description: 'Light vanilla cake topped with seasonal berries.', image: 'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:3, name: 'Matcha Cream Cake', price:15.00, description: 'Delicate matcha layers with whipped cream frosting.', image: 'https://images.pexels.com/photos/315755/pexels-photo-315755.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:4, name: 'Red Velvet', price:13.75, description: 'Classic red velvet with smooth cream cheese icing.', image: 'https://images.pexels.com/photos/205961/pexels-photo-205961.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:5, name: 'Lemon Drizzle', price:11.50, description: 'Zesty lemon cake with tangy glaze.', image: 'https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=400' },
-        { id:6, name: 'Salted Caramel', price:16.00, description: 'Decadent caramel layers with a hint of sea salt.', image: 'https://images.pexels.com/photos/1624487/pexels-photo-1624487.jpeg?auto=compress&cs=tinysrgb&w=400' }
-      ];
-
       function Header(){
         return (
           <header className="flex items-center justify-between py-4">
@@ -304,12 +294,39 @@
       function App(){
         const [query, setQuery] = useState('');
         const [open, setOpen] = useState(false);
+        const [cakes, setCakes] = useState([]);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+          async function loadProducts() {
+            try {
+              if (!window.supabase) {
+                console.error('Supabase not initialized');
+                setLoading(false);
+                return;
+              }
+              
+              const { data, error } = await window.supabase
+                .from('products')
+                .select('*')
+                .order('id');
+              
+              if (error) throw error;
+              setCakes(data || []);
+            } catch (err) {
+              console.error('Error loading products:', err);
+            } finally {
+              setLoading(false);
+            }
+          }
+          loadProducts();
+        }, []);
 
         const filtered = useMemo(() => {
           const q = query.trim().toLowerCase();
-          if(!q) return CAKES;
-          return CAKES.filter(c => c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
-        }, [query]);
+          if(!q) return cakes;
+          return cakes.filter(c => c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
+        }, [query, cakes]);
 
         return (
           <CartProvider>
@@ -335,9 +352,15 @@
                 </div>
 
                 <main className="mt-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filtered.map(c => <ProductCard key={c.id} cake={c} />)}
-                  </div>
+                  {loading ? (
+                    <div className="text-center py-12 text-gray-500">Loading products...</div>
+                  ) : filtered.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">No cakes found</div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filtered.map(c => <ProductCard key={c.id} cake={c} />)}
+                    </div>
+                  )}
                 </main>
 
                 <footer className="mt-8 text-center text-sm text-gray-500">© M Cafe - Cake Sale</footer>
