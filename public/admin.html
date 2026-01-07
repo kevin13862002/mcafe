@@ -24,7 +24,11 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+      window.SUPABASE_URL = 'https://dqxgxjyliirsldztyelq.supabase.co';
+      window.SUPABASE_ANON_KEY = 'sb_publishable_bZpsjO1rZ-y7URC8xn_IWw_PUwF1S8Y';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.js"></script>
     <script src="./supabase-init.js"></script>
   </head>
   <body class="bg-gray-50 font-sans text-gray-800">
@@ -65,12 +69,12 @@
 
         async function fetchProducts(){
           try{
-            if (!window.supabase) {
+              if (!window.supabaseClient) {
               console.error('Supabase not initialized');
               return;
             }
             
-            const { data, error } = await window.supabase
+              const { data, error } = await window.supabaseClient
               .from('products')
               .select('*')
               .order('id');
@@ -85,14 +89,14 @@
 
         async function fetchOrders(){
           try{
-            if (!window.supabase) {
+              if (!window.supabaseClient) {
               console.error('Supabase not initialized');
               alert('Supabase not initialized. Please refresh the page.');
               return;
             }
             
             console.log('Fetching orders from Supabase...');
-            const { data, error } = await window.supabase
+              const { data, error } = await window.supabaseClient
               .from('orders')
               .select('*')
               .order('created_at', { ascending: false });
@@ -112,12 +116,12 @@
         async function addProduct(name, price, image){
           if(!name || !price) return alert('Name and price required');
           try{
-            if (!window.supabase) {
+              if (!window.supabaseClient) {
               console.error('Supabase not initialized');
               return;
             }
             
-            const { data, error } = await window.supabase
+              const { data, error } = await window.supabaseClient
               .from('products')
               .insert([{ name, price: parseFloat(price), image, description: '' }])
               .select();
@@ -133,12 +137,12 @@
 
         async function updateProduct(id, updates){
           try{
-            if (!window.supabase) {
+              if (!window.supabaseClient) {
               console.error('Supabase not initialized');
               return;
             }
             
-            const { data, error } = await window.supabase
+              const { data, error } = await window.supabaseClient
               .from('products')
               .update(updates)
               .eq('id', id)
@@ -155,12 +159,12 @@
         async function deleteProduct(id){
           if(!confirm('Delete this product?')) return;
           try{
-            if (!window.supabase) {
+              if (!window.supabaseClient) {
               console.error('Supabase not initialized');
               return;
             }
             
-            const { error } = await window.supabase
+              const { error } = await window.supabaseClient
               .from('products')
               .delete()
               .eq('id', id);
@@ -177,8 +181,8 @@
 
         async function signOut(){
           try{
-            if (window.supabase) {
-              await window.supabase.auth.signOut();
+            if (window.supabaseClient) {
+              await window.supabaseClient.auth.signOut();
             }
           }catch(e){
             console.error('signout error:', e);
