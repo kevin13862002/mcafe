@@ -27,7 +27,7 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.js"></script>
     <script>
       window.SUPABASE_URL = 'https://dqxgxjyliirsldztyelq.supabase.co';
       window.SUPABASE_ANON_KEY = 'sb_publishable_bZpsjO1rZ-y7URC8xn_IWw_PUwF1S8Y';
@@ -300,13 +300,13 @@
         useEffect(() => {
           async function loadProducts() {
             try {
-              if (!window.supabase) {
+              if (!window.supabaseClient) {
                 console.error('Supabase not initialized');
                 setLoading(false);
                 return;
               }
               
-              const { data, error } = await window.supabase
+              const { data, error } = await window.supabaseClient
                 .from('products')
                 .select('*')
                 .order('id');
