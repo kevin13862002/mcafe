@@ -28,6 +28,10 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+      window.SUPABASE_URL = 'https://dqxgxjyliirsldztyelq.supabase.co';
+      window.SUPABASE_ANON_KEY = 'sb_publishable_bZpsjO1rZ-y7URC8xn_IWw_PUwF1S8Y';
+    </script>
     <script src="./supabase-init.js"></script>
   </head>
   <body class="bg-white text-gray-800 font-sans">
@@ -244,11 +248,16 @@
                 // Attempt to save to Supabase before redirecting to WhatsApp
                 try{
                   if(window.saveOrderToDatabase){
+                    const combinedRequests = [
+                      address ? `Delivery Address: ${address}` : null,
+                      requests ? `Special Requests: ${requests}` : null
+                    ].filter(Boolean).join(' | ') || null;
+
                     const dbOrder = {
-                      items: JSON.stringify(items.map(it => ({ id: it.id, name: it.name, price: it.price, qty: it.qty }))),
+                      items: JSON.stringify(items.map(it => ({ id: it.id, name: it.name, price: it.price, qty: it.qty })) ),
                       total: total,
                       customer_name: name || null,
-                      requests: requests || null,
+                      requests: combinedRequests,
                       location: location ? location.maps : null
                     };
                     await window.saveOrderToDatabase(dbOrder);

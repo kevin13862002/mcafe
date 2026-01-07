@@ -187,17 +187,34 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map(o => (
-                      <tr key={o.id} className="border-t">
-                        <td className="p-2 align-top">{o.id}</td>
-                        <td className="p-2 align-top">{o.customer_name || 'N/A'}</td>
-                        <td className="p-2 align-top"><pre className="whitespace-pre-wrap text-xs">{o.items}</pre></td>
-                        <td className="p-2 align-top">${o.total}</td>
-                        <td className="p-2 align-top">{o.requests || '-'}</td>
-                        <td className="p-2 align-top">{o.location ? <a href={o.location} target="_blank" rel="noreferrer" className="text-scgreen">Map</a> : '-'}</td>
-                        <td className="p-2 align-top">{o.created_at}</td>
-                      </tr>
-                    ))}
+                    {orders.map(o => {
+                      let parsedItems = [];
+                      try {
+                        parsedItems = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                      } catch (e) {
+                        parsedItems = [];
+                      }
+                      
+                      return (
+                        <tr key={o.id} className="border-t">
+                          <td className="p-2 align-top">{o.id}</td>
+                          <td className="p-2 align-top">{o.customer_name || 'N/A'}</td>
+                          <td className="p-2 align-top">
+                            <div className="text-xs space-y-1">
+                              {parsedItems.map((item, idx) => (
+                                <div key={idx}>
+                                  {item.name} x{item.qty} = ${((item.price || 0) * (item.qty || 0)).toFixed(2)}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="p-2 align-top">${o.total}</td>
+                          <td className="p-2 align-top">{o.requests || '-'}</td>
+                          <td className="p-2 align-top">{o.location ? <a href={o.location} target="_blank" rel="noreferrer" className="text-scgreen">Map</a> : '-'}</td>
+                          <td className="p-2 align-top">{o.created_at}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
