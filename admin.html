@@ -295,37 +295,93 @@
         const [name, setName] = useState('');
         const [price, setPrice] = useState('');
         const [image, setImage] = useState('');
+        const [imageFile, setImageFile] = useState(null);
         const [loading, setLoading] = useState(false);
+        const [uploadProgress, setUploadProgress] = useState('');
 
         async function submit(e){
           e.preventDefault();
           const pr = parseFloat(price);
           if(!name || name.trim().length === 0) return alert('Name is required');
           if(!isFinite(pr) || pr <= 0) return alert('Enter a valid price');
+          
           setLoading(true);
-          const ok = await addProduct(name, pr, image);
+          let imageUrl = image;
+          
+          // Upload image file if selected
+          if(imageFile){
+            try{
+              setUploadProgress('Uploading image...');
+              if(!window.supabaseClient) throw new Error('Supabase not initialized');
+              
+              const fileName = `${Date.now()}-${imageFile.name}`;
+              const { data, error } = await window.supabaseClient.storage
+                .from('product-images')
+                .upload(fileName, imageFile, {
+                  cacheControl: '3600',
+                  upsert: false
+                });
+              
+              if(error) throw error;
+              
+              // Get public URL
+              const { data: { publicUrl } } = window.supabaseClient.storage
+                .from('product-images')
+                .getPublicUrl(fileName);
+              
+              imageUrl = publicUrl;
+              setUploadProgress('Image uploaded!');
+            }catch(err){
+              setLoading(false);
+              setUploadProgress('');
+              return alert('Image upload failed: ' + err.message);
+            }
+          }
+          
+          setUploadProgress('Saving product...');
+          const ok = await addProduct(name, pr, imageUrl);
           setLoading(false);
+          setUploadProgress('');
           if(!ok) return;
-          setName(''); setPrice(''); setImage('');
+          setName(''); setPrice(''); setImage(''); setImageFile(null);
         }
 
         const valid = name.trim().length > 0 && isFinite(parseFloat(price)) && parseFloat(price) > 0;
 
         return (
-          <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-            <div>
-              <label className="block text-sm">Name</label>
-              <input value={name} onChange={e=>setName(e.target.value)} className="mt-1 w-full px-3 py-2 border rounded" />
+          <form onSubmit={submit} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium">Name</label>
+                <input value={name} onChange={e=>setName(e.target.value)} className="mt-1 w-full px-3 py-2 border rounded" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Price</label>
+                <input value={price} onChange={e=>setPrice(e.target.value)} type="number" step="0.01" className="mt-1 w-full px-3 py-2 border rounded" />
+              </div>
             </div>
             <div>
-              <label className="block text-sm">Price</label>
-              <input value={price} onChange={e=>setPrice(e.target.value)} type="number" step="0.01" className="mt-1 w-full px-3 py-2 border rounded" />
+              <label className="block text-sm font-medium">Upload Image</label>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={e=>setImageFile(e.target.files[0])} 
+                className="mt-1 w-full px-3 py-2 border rounded" 
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload an image to Supabase storage</p>
             </div>
             <div>
-              <label className="block text-sm">Image URL</label>
-              <input value={image} onChange={e=>setImage(e.target.value)} className="mt-1 w-full px-3 py-2 border rounded" />
+              <label className="block text-sm font-medium">Or Image URL</label>
+              <input 
+                value={image} 
+                onChange={e=>setImage(e.target.value)} 
+                placeholder="https://example.com/image.jpg" 
+                className="mt-1 w-full px-3 py-2 border rounded" 
+              />
+              <p className="text-xs text-gray-500 mt-1">Or paste an external image URL</p>
             </div>
-            <div className="sm:col-span-3">
+            {uploadProgress && <div className="text-sm text-blue-600">{uploadProgress}</div>}
+            <div>
               <button type="submit" disabled={!valid || loading} style={{backgroundColor: valid && !loading ? '#00704A' : '#ccc'}} className="px-4 py-2 text-white rounded disabled:opacity-60">{loading ? 'Adding…' : 'Add Product'}</button>
             </div>
           </form>
