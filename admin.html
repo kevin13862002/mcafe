@@ -316,7 +316,7 @@
               
               const fileName = `${Date.now()}-${imageFile.name}`;
               const { data, error } = await window.supabaseClient.storage
-                .from('product-images')
+                .from('products')
                 .upload(fileName, imageFile, {
                   cacheControl: '3600',
                   upsert: false
@@ -326,7 +326,7 @@
               
               // Get public URL
               const { data: { publicUrl } } = window.supabaseClient.storage
-                .from('product-images')
+                .from('products')
                 .getPublicUrl(fileName);
               
               imageUrl = publicUrl;
