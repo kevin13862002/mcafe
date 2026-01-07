@@ -4,26 +4,32 @@
 -- IMPORTANT: Make sure your 'products' bucket exists first!
 -- Go to Storage > Create bucket named 'products' and make it PUBLIC
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+DROP POLICY IF EXISTS "Public Upload" ON storage.objects;
+DROP POLICY IF EXISTS "Public Update" ON storage.objects;
+DROP POLICY IF EXISTS "Public Delete" ON storage.objects;
+
 -- Allow public read access to product images
-CREATE POLICY IF NOT EXISTS "Public Access"
+CREATE POLICY "Public Access"
 ON storage.objects FOR SELECT
 TO public
 USING ( bucket_id = 'products' );
 
 -- Allow public uploads (so admin can upload without auth)
-CREATE POLICY IF NOT EXISTS "Public Upload"
+CREATE POLICY "Public Upload"
 ON storage.objects FOR INSERT
 TO public
 WITH CHECK ( bucket_id = 'products' );
 
 -- Allow public updates
-CREATE POLICY IF NOT EXISTS "Public Update"
+CREATE POLICY "Public Update"
 ON storage.objects FOR UPDATE
 TO public
 USING ( bucket_id = 'products' );
 
 -- Allow public deletes
-CREATE POLICY IF NOT EXISTS "Public Delete"
+CREATE POLICY "Public Delete"
 ON storage.objects FOR DELETE
 TO public
 USING ( bucket_id = 'products' );
