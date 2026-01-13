@@ -71,6 +71,10 @@
           setItems(prev => prev.filter(i => i.id !== id));
         }
 
+        function clearCart() {
+          setItems([]);
+        }
+
         const total = useMemo(() => items.reduce((s,i) => s + i.price * i.qty, 0), [items]);
         const count = useMemo(() => items.reduce((s,i) => s + i.qty, 0), [items]);
 
@@ -83,7 +87,7 @@
         }, [items]);
 
         return (
-          <CartContext.Provider value={{items, addToCart, updateQty, removeItem, total, count}}>
+          <CartContext.Provider value={{items, addToCart, updateQty, removeItem, clearCart, total, count}}>
             {children}
           </CartContext.Provider>
         );
@@ -210,13 +214,15 @@
             }
 
             function Checkout({onBack}){
-              const { items, total } = useContext(CartContext);
+              const { items, total, clearCart } = useContext(CartContext);
               const [name, setName] = useState('');
               const [address, setAddress] = useState('');
               const [requests, setRequests] = useState('');
               const [location, setLocation] = useState(null);
               const [locError, setLocError] = useState(null);
               const [locLoading, setLocLoading] = useState(false);
+              const [successMessage, setSuccessMessage] = useState(null);
+              const [isSubmitting, setIsSubmitting] = useState(false);
 
               function shareLocation(){
                 if(!navigator.geolocation){
@@ -240,6 +246,9 @@
               async function placeViaWhatsApp(){
                 if(items.length === 0) return alert('Cart is empty');
                 if(!name || name.trim().length === 0) return alert('Please enter your name before placing the order');
+                
+                setIsSubmitting(true);
+                
                 const lines = [];
                 lines.push('M Cafe - Cake Sale Order');
                 lines.push('');
@@ -276,16 +285,40 @@
                   }
                 }catch(err){
                   alert('Could not save order to database. Please try again.');
+                  setIsSubmitting(false);
                   return;
                 }
 
-                const encoded = encodeURIComponent(msg);
-                const url = `https://wa.me/18769060203?text=${encoded}`;
-                window.open(url, '_blank');
+                // Show success message and clear cart
+                setSuccessMessage('Order submitted successfully! 🎉');
+                clearCart();
+                
+                // Wait a moment for success message to display, then open WhatsApp
+                setTimeout(() => {
+                  const encoded = encodeURIComponent(msg);
+                  const url = `https://wa.me/18769060203?text=${encoded}`;
+                  window.open(url, '_blank');
+                  
+                  // Reset form and go back to cart view
+                  setTimeout(() => {
+                    setName('');
+                    setAddress('');
+                    setRequests('');
+                    setLocation(null);
+                    setSuccessMessage(null);
+                    setIsSubmitting(false);
+                    onBack();
+                  }, 500);
+                }, 1500);
               }
 
               return (
                 <div>
+                  {successMessage && (
+                    <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg text-center font-semibold">
+                      {successMessage}
+                    </div>
+                  )}
                   <div className="space-y-3 max-h-60 overflow-y-auto mb-3">
                     <div>
                       <label className="block text-sm font-medium">Name</label>
@@ -307,8 +340,8 @@
                   </div>
 
                   <div className="flex gap-3">
-                    <button onClick={placeViaWhatsApp} style={{backgroundColor: '#00704A'}} className="flex-1 px-4 py-2 text-white rounded-lg">Place Order via WhatsApp</button>
-                    <button onClick={onBack} className="px-4 py-2 bg-white border border-gray-200 rounded-lg">Back</button>
+                    <button onClick={placeViaWhatsApp} disabled={isSubmitting} style={{backgroundColor: '#00704A', opacity: isSubmitting ? 0.7 : 1}} className="flex-1 px-4 py-2 text-white rounded-lg">{isSubmitting ? 'Submitting…' : 'Place Order via WhatsApp'}</button>
+                    <button onClick={onBack} disabled={isSubmitting} className="px-4 py-2 bg-white border border-gray-200 rounded-lg">Back</button>
                   </div>
                 </div>
               );
