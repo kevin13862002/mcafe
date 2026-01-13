@@ -289,10 +289,12 @@
                       payment_method: paymentMethod,
                       delivery_method: deliveryMethod
                     };
+                    console.log('Saving order to database:', dbOrder);
                     await window.saveOrderToDatabase(dbOrder);
                   }
                 }catch(err){
-                  alert('Could not save order to database. Please try again.');
+                  console.error('Order save error:', err);
+                  alert('Could not save order to database. Please try again. Error: ' + (err.message || JSON.stringify(err)));
                   setIsSubmitting(false);
                   return;
                 }

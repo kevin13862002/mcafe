@@ -267,6 +267,7 @@
                       payment_method: paymentMethod,
                       delivery_method: deliveryMethod
                     };
+                    console.log('Saving order to database:', dbOrder);
                     await window.saveOrderToDatabase(dbOrder);
                   }
                 }catch(err){
