@@ -196,7 +196,8 @@
               const [name, setName] = useState('');
               const [address, setAddress] = useState('');
               const [requests, setRequests] = useState('');
-              const [paymentMethod, setPaymentMethod] = useState('cash');
+              const [deliveryMethod, setDeliveryMethod] = useState('pickup');
+              const [paymentMethod, setPaymentMethod] = useState('bank');
               const [location, setLocation] = useState(null);
               const [locError, setLocError] = useState(null);
               const [locLoading, setLocLoading] = useState(false);
@@ -239,7 +240,10 @@
                 lines.push(`Total: $${total.toFixed(2)}`);
                 lines.push('');
                 lines.push(`Customer: ${name || 'N/A'}`);
-          lines.push(`Delivery Address: ${address || 'Not provided'}`);
+                lines.push(`Delivery Method: ${deliveryMethod.charAt(0).toUpperCase() + deliveryMethod.slice(1)}`);
+                if(deliveryMethod === 'delivery') {
+                  lines.push(`Delivery Address: ${address || 'Not provided'}`);
+                }
                 lines.push(`Payment Method: ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}`);
                 lines.push('');
                 lines.push(`Location: ${location ? location.maps : 'Not provided'}`);
@@ -260,7 +264,8 @@
                       customer_name: name || null,
                       requests: combinedRequests,
                       location: location ? location.maps : null,
-                      payment_method: paymentMethod
+                      payment_method: paymentMethod,
+                      delivery_method: deliveryMethod
                     };
                     await window.saveOrderToDatabase(dbOrder);
                   }
@@ -293,9 +298,18 @@
                       <input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium">Delivery Address</label>
-                      <input value={address} onChange={e => setAddress(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
+                      <label className="block text-sm font-medium">Delivery Method</label>
+                      <select value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg">
+                        <option value="pickup">Pickup</option>
+                        <option value="delivery">Delivery</option>
+                      </select>
                     </div>
+                    {deliveryMethod === 'delivery' && (
+                      <div>
+                        <label className="block text-sm font-medium">Delivery Address</label>
+                        <input value={address} onChange={e => setAddress(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-medium">Special Requests / Allergies</label>
                       <textarea value={requests} onChange={e => setRequests(e.target.value)} rows={3} style={{backgroundColor: '#fffacd'}} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
