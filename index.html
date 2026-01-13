@@ -343,6 +343,11 @@
                       <div>
                         <label className="block text-sm font-medium">Delivery Address</label>
                         <input value={address} onChange={e => setAddress(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
+                        <div className="mt-2">
+                          <button onClick={shareLocation} className="px-3 py-2 bg-white border border-gray-200 rounded-lg">{locLoading ? 'Locating…' : 'Share My Location'}</button>
+                          {location && <a href={location.maps} target="_blank" rel="noreferrer" style={{color: '#00704A'}} className="ml-3 text-sm font-medium">View on map</a>}
+                          {locError && <div className="text-sm text-red-500 mt-1">{locError}</div>}
+                        </div>
                       </div>
                     )}
                     <div>
@@ -356,11 +361,6 @@
                         <option value="bank">Bank Deposit</option>
                         <option value="credit">Credit Card</option>
                       </select>
-                    </div>
-                    <div>
-                      <button onClick={shareLocation} className="px-3 py-2 bg-white border border-gray-200 rounded-lg">{locLoading ? 'Locating…' : 'Share My Location'}</button>
-                      {location && <a href={location.maps} target="_blank" rel="noreferrer" style={{color: '#00704A'}} className="ml-3 text-sm font-medium">View on map</a>}
-                      {locError && <div className="text-sm text-red-500 mt-1">{locError}</div>}
                     </div>
                   </div>
 
