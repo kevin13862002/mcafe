@@ -156,6 +156,29 @@
           }
         }
 
+        async function deleteOrder(id){
+          if(!window.confirm('Are you sure you want to delete this order?')) return;
+          
+          try{
+            if (!window.supabaseClient) {
+              console.error('Supabase not initialized');
+              return;
+            }
+            
+            const { error } = await window.supabaseClient
+              .from('orders')
+              .delete()
+              .eq('id', id);
+            
+            if (error) throw error;
+            alert('Order deleted successfully');
+            fetchOrders();
+          }catch(e){
+            console.error('deleteOrder error:', e.message);
+            alert('Failed to delete order');
+          }
+        }
+
         if(!unlocked) return <SignIn onSuccess={(u) => { setUser(u); setUnlocked(true); }} />;
 
         async function signOut(){
@@ -210,6 +233,7 @@
                       <th className="p-2">Requests</th>
                       <th className="p-2">Location</th>
                       <th className="p-2">Time</th>
+                      <th className="p-2">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -238,6 +262,9 @@
                           <td className="p-2 align-top">{o.requests || '-'}</td>
                           <td className="p-2 align-top">{o.location ? <a href={o.location} target="_blank" rel="noreferrer" className="text-scgreen">Map</a> : '-'}</td>
                           <td className="p-2 align-top">{o.created_at}</td>
+                          <td className="p-2 align-top">
+                            <button onClick={() => deleteOrder(o.id)} className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Delete</button>
+                          </td>
                         </tr>
                       );
                     })}
