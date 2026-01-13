@@ -196,6 +196,7 @@
               const [name, setName] = useState('');
               const [address, setAddress] = useState('');
               const [requests, setRequests] = useState('');
+              const [paymentMethod, setPaymentMethod] = useState('cash');
               const [location, setLocation] = useState(null);
               const [locError, setLocError] = useState(null);
               const [locLoading, setLocLoading] = useState(false);
@@ -239,6 +240,7 @@
                 lines.push('');
                 lines.push(`Customer: ${name || 'N/A'}`);
           lines.push(`Delivery Address: ${address || 'Not provided'}`);
+                lines.push(`Payment Method: ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}`);
                 lines.push('');
                 lines.push(`Location: ${location ? location.maps : 'Not provided'}`);
 
@@ -257,7 +259,8 @@
                       total: total,
                       customer_name: name || null,
                       requests: combinedRequests,
-                      location: location ? location.maps : null
+                      location: location ? location.maps : null,
+                      payment_method: paymentMethod
                     };
                     await window.saveOrderToDatabase(dbOrder);
                   }
@@ -296,6 +299,14 @@
                     <div>
                       <label className="block text-sm font-medium">Special Requests / Allergies</label>
                       <textarea value={requests} onChange={e => setRequests(e.target.value)} rows={3} style={{backgroundColor: '#fffacd'}} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Payment Method</label>
+                      <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg">
+                        <option value="cash">Cash on Delivery</option>
+                        <option value="bank">Bank Deposit</option>
+                        <option value="credit">Credit Card</option>
+                      </select>
                     </div>
                     <div>
                       <button onClick={shareLocation} className="px-3 py-2 bg-white border border-gray-200 rounded-lg">{locLoading ? 'Locating…' : 'Share My Location'}</button>

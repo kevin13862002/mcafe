@@ -235,6 +235,7 @@
                       <th className="p-2">Items</th>
                       <th className="p-2">Total</th>
                       <th className="p-2">Requests</th>
+                      <th className="p-2">Payment</th>
                       <th className="p-2">Location</th>
                       <th className="p-2">Time</th>
                       <th className="p-2">Action</th>
@@ -264,6 +265,7 @@
                           </td>
                           <td className="p-2 align-top">${o.total}</td>
                           <td className="p-2 align-top">{o.requests || '-'}</td>
+                          <td className="p-2 align-top">{o.payment_method ? o.payment_method.charAt(0).toUpperCase() + o.payment_method.slice(1) : 'Cash'}</td>
                           <td className="p-2 align-top">{o.location ? <a href={o.location} target="_blank" rel="noreferrer" className="text-scgreen">Map</a> : '-'}</td>
                           <td className="p-2 align-top">{o.created_at}</td>
                           <td className="p-2 align-top">
