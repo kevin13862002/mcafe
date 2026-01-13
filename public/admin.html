@@ -159,27 +159,35 @@
         async function deleteOrder(id){
           if(!window.confirm('Are you sure you want to delete this order?')) return;
           
-          // Immediately remove from local state for instant UI update
-          setOrders(prev => prev.filter(o => o.id !== id));
-          
           try{
             if (!window.supabaseClient) {
               console.error('Supabase not initialized');
+              alert('Supabase not initialized');
               return;
             }
+            
+            console.log('Attempting to delete order:', id);
             
             const { error } = await window.supabaseClient
               .from('orders')
               .delete()
               .eq('id', id);
             
-            if (error) throw error;
+            if (error) {
+              console.error('Delete error:', error);
+              throw error;
+            }
+            
+            console.log('Order deleted from database');
             alert('Order deleted successfully');
+            
+            // Refresh orders from database to confirm deletion
+            await fetchOrders();
           }catch(e){
             console.error('deleteOrder error:', e.message);
-            alert('Failed to delete order');
-            // Restore the order if deletion failed
-            fetchOrders();
+            alert('Failed to delete order: ' + (e.message || 'Unknown error'));
+            // Restore the order list on error
+            await fetchOrders();
           }
         }
         }
