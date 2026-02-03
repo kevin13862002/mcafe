@@ -203,8 +203,14 @@
 
           setRouteLoading(true);
 
-          const startCoords = parseLatLngFromLocation(startingPoint);
-          if (!startCoords) {
+          let startCoords;
+          try {
+            startCoords = JSON.parse(startingPoint);
+          } catch (e) {
+            startCoords = parseLatLngFromLocation(startingPoint);
+          }
+
+          if (!startCoords || !isFinite(startCoords.lat) || !isFinite(startCoords.lng)) {
             setRouteLoading(false);
             return alert('Invalid starting point');
           }
