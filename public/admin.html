@@ -24,17 +24,7 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
-    />
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-      crossorigin=""
-    ></script>
+
     <script>
       window.SUPABASE_URL = 'https://dqxgxjyliirsldztyelq.supabase.co';
       window.SUPABASE_ANON_KEY = 'sb_publishable_bZpsjO1rZ-y7URC8xn_IWw_PUwF1S8Y';
@@ -60,15 +50,6 @@
         const [products, setProducts] = useState([]);
         const [orders, setOrders] = useState([]);
         const [groupBy, setGroupBy] = useState('none');
-        const mapRef = useRef(null);
-        const mapInstanceRef = useRef(null);
-        const markersRef = useRef([]);
-        const [mapError, setMapError] = useState('');
-        const [mapApiKey, setMapApiKey] = useState(window.GOOGLE_MAPS_API_KEY || '');
-        const [startingPoint, setStartingPoint] = useState('');
-        const [optimizedRoute, setOptimizedRoute] = useState(null);
-        const [routeLoading, setRouteLoading] = useState(false);
-        const mapTypeRef = useRef(null);
 
         const [user, setUser] = useState(null);
 
@@ -638,77 +619,6 @@
                 </table>
               </div>
             </section>
-
-            <section className="bg-white p-4 rounded-lg shadow mt-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-medium">Delivery Locations Map</h2>
-                <div className="text-xs text-gray-500">Google Maps / OpenStreetMap</div>
-              </div>
-              <div className="mb-3 space-y-2">
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <label className="text-sm text-gray-600 sm:w-40">Google Maps API key</label>
-                  <input
-                    value={mapApiKey}
-                    onChange={(e) => setMapApiKey(e.target.value)}
-                    placeholder="Optional — enables Google Maps"
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded"
-                  />
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <label className="text-sm text-gray-600 sm:w-40">Starting point</label>
-                  <select
-                    value={startingPoint}
-                    onChange={(e) => setStartingPoint(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded"
-                  >
-                    <option value="">Select a location...</option>
-                    <option value={JSON.stringify({ lat: 18.0179, lng: -76.8099 })}>Default (Kingston, Jamaica)</option>
-                    {getAddressesWithCoords().map((addr) => (
-                      <option key={addr.id} value={JSON.stringify(addr.coords)}>
-                        {addr.address}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={optimizeRoute}
-                    disabled={!startingPoint || routeLoading}
-                    style={{backgroundColor: startingPoint && !routeLoading ? '#00704A' : '#ccc'}}
-                    className="px-4 py-2 text-white rounded text-sm"
-                  >
-                    {routeLoading ? 'Optimizing…' : 'Calculate Shortest Route'}
-                  </button>
-                  {optimizedRoute && (
-                    <button onClick={clearRoute} className="px-4 py-2 border border-gray-200 rounded text-sm">
-                      Clear Route
-                    </button>
-                  )}
-                </div>
-              </div>
-              {mapError && (
-                <div className="mb-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                  {mapError}
-                </div>
-              )}
-              {optimizedRoute && (
-                <div className="mb-3 bg-blue-50 border border-blue-200 rounded p-3">
-                  <h3 className="font-medium text-blue-900 mb-2">Optimized Route ({optimizedRoute.length - 1} stops)</h3>
-                  <div className="space-y-1 text-sm text-blue-800 max-h-40 overflow-y-auto">
-                    {optimizedRoute.map((stop, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <span className="font-bold">{idx}.</span>
-                        <div>
-                          <div className="font-medium">{stop.label}</div>
-                          {stop.distFromPrev && <div className="text-xs opacity-75">{stop.distFromPrev.toFixed(2)} km from previous</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div ref={mapRef} className="w-full h-96 rounded-lg border border-gray-200"></div>
-            </section>
           </div>
         );
       }
@@ -718,6 +628,7 @@
         const [name, setName] = useState(p.name || '');
         const [price, setPrice] = useState(p.price || 0);
         const [image, setImage] = useState(p.image || '');
+        const [displayOrder, setDisplayOrder] = useState(p.display_order || 0);
         const [imageFile, setImageFile] = useState(null);
         const [uploading, setUploading] = useState(false);
 
@@ -756,7 +667,7 @@
             }
           }
           
-          onSave({ name, price: pr, image: imageUrl });
+          onSave({ name, price: pr, image: imageUrl, display_order: parseInt(displayOrder) || 0 });
           setEditing(false);
           setImageFile(null);
         }
@@ -771,6 +682,7 @@
                 <div>
                   <div className="font-medium text-sm truncate">{name}</div>
                   <div className="text-lg font-semibold text-scgreen">${price}</div>
+                  <div className="text-xs text-gray-500">Order: {displayOrder}</div>
                   <button onClick={()=>setEditing(true)} className="mt-2 w-full px-3 py-1 border border-gray-200 rounded text-sm hover:bg-gray-50">Edit</button>
                 </div>
               ) : (
@@ -779,6 +691,7 @@
                     <input value={name} onChange={e=>setName(e.target.value)} placeholder="Name" className="px-2 py-1 border rounded" />
                     <input value={price} onChange={e=>setPrice(e.target.value)} placeholder="Price" type="number" step="0.01" className="px-2 py-1 border rounded" />
                   </div>
+                  <input value={displayOrder} onChange={e=>setDisplayOrder(e.target.value)} placeholder="Display Order" type="number" className="w-full px-2 py-1 border rounded text-sm" />
                   <div>
                     <input type="file" accept="image/*" onChange={e=>setImageFile(e.target.files[0])} className="text-xs" />
                   </div>
