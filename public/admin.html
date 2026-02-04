@@ -50,6 +50,7 @@
         const [products, setProducts] = useState([]);
         const [orders, setOrders] = useState([]);
         const [groupBy, setGroupBy] = useState('none');
+        const [draggedProduct, setDraggedProduct] = useState(null);
 
         const [user, setUser] = useState(null);
 
@@ -213,6 +214,28 @@
           }
         }
 
+        async function reorderProducts(fromIdx, toIdx){
+          if(fromIdx === toIdx) return;
+          const newProducts = [...products];
+          const [movedProduct] = newProducts.splice(fromIdx, 1);
+          newProducts.splice(toIdx, 0, movedProduct);
+          
+          const updates = newProducts.map((p, idx) => ({
+            id: p.id,
+            displayOrder: idx * 10
+          }));
+          
+          try {
+            await Promise.all(
+              updates.map(upd => updateProduct(upd.id, { display_order: upd.displayOrder }))
+            );
+            setProducts(newProducts);
+          } catch (e) {
+            console.error('Reorder failed:', e);
+            fetchProducts();
+          }
+        }
+
         async function deleteOrder(id){
           if(!window.confirm('Are you sure you want to delete this order?')) return;
           
@@ -304,8 +327,23 @@
                 <div className="mt-6">
                 <h3 className="font-medium mb-2">Existing Products</h3>
                 <div className="space-y-2">
-                  {products.map(p => (
-                    <ProductRow key={p.id} p={p} onSave={(updates) => updateProduct(p.id, updates)} />
+                  {products.map((p, idx) => (
+                    <ProductRow 
+                      key={p.id} 
+                      p={p} 
+                      index={idx}
+                      onSave={(updates) => updateProduct(p.id, updates)}
+                      isDragged={draggedProduct?.id === p.id}
+                      onDragStart={() => setDraggedProduct({id: p.id, index: idx})}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        if(draggedProduct && draggedProduct.id !== p.id) {
+                          reorderProducts(draggedProduct.index, idx);
+                          setDraggedProduct(null);
+                        }
+                      }}
+                      onDragEnd={() => setDraggedProduct(null)}
+                    />
                   ))}
                 </div>
               </div>
@@ -398,7 +436,7 @@
         );
       }
 
-      function ProductRow({p, onSave}){
+      function ProductRow({p, onSave, index, isDragged, onDragStart, onDragOver, onDrop, onDragEnd}){"}}]
         const [editing, setEditing] = useState(false);
         const [name, setName] = useState(p.name || '');
         const [price, setPrice] = useState(p.price || 0);
@@ -448,7 +486,18 @@
         }
 
         return (
-          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
+          <div 
+            draggable
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            onDragEnd={onDragEnd}
+            className={`border rounded-lg overflow-hidden bg-white transition-all cursor-move ${
+              isDragged 
+                ? 'opacity-50 border-scgreen border-2' 
+                : 'border-gray-200 hover:shadow-md'
+            }`}
+          >
             <div className="w-full h-40 bg-gray-100 overflow-hidden">
               {image ? <img src={image} alt={name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300">No image</div>}
             </div>
